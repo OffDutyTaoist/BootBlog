@@ -1,6 +1,6 @@
 // src/commands.ts
 
-export type CommandHandler = (cmdName: string, ...args: string[]) => void;
+export type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
 
 export type CommandsRegistry = {
   [cmdName: string]: CommandHandler;
@@ -14,14 +14,14 @@ export function registerCommand(
   registry[cmdName] = handler;
 }
 
-export function runCommand(
+export async function runCommand(
   registry: CommandsRegistry,
   cmdName: string,
   ...args: string[]
-) {
+): Promise<void> {
   const handler = registry[cmdName];
   if (!handler) {
     throw new Error(`Unknown command: ${cmdName}`);
   }
-  handler(cmdName, ...args);
+  await handler(cmdName, ...args);
 }
