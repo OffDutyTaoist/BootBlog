@@ -1,18 +1,17 @@
-// src/handlerAddFeed.ts
+// src/handlerFollow.ts
 
 import type { CommandHandler } from "./commands.js";
 import { readConfig } from "./config.js";
 import { getUserByName } from "./lib/db/queries/users.js";
-import { createFeed } from "./lib/db/queries/feeds.js";
+import { getFeedByUrl } from "./lib/db/queries/feeds.js";
 import { createFeedFollow } from "./lib/db/queries/feedFollows.js";
-import { printFeed } from "./lib/printFeed.js";
 
-export const handlerAddFeed: CommandHandler = async (cmdName, ...args) => {
-  if (args.length < 2) {
-    throw new Error("addfeed requires a name and url.");
+export const handlerFollow: CommandHandler = async (cmdName, ...args) => {
+  if (args.length === 0) {
+    throw new Error("follow requires a feed URL.");
   }
 
-  const [name, url] = args;
+  const url = args[0];
 
   const cfg = readConfig();
   if (!cfg.currentUserName) {
@@ -20,19 +19,16 @@ export const handlerAddFeed: CommandHandler = async (cmdName, ...args) => {
   }
 
   const user = await getUserByName(cfg.currentUserName);
-
   if (!user) {
     throw new Error(`Current user "${cfg.currentUserName}" does not exist.`);
   }
 
-  const feed = await createFeed(name, url, user.id);
-
-  // Show the new feed
-  printFeed(feed, user);
+  const feed = await getFeedByUrl(url);
+  if (!feed) {
+    throw new Error(`Feed with URL "${url}" does not exist.`);
+  }
 
   const follow = await createFeedFollow(user.id, feed.id);
 
-  console.log(
-    `User "${follow.userName}" is now following newly added feed "${follow.feedName}".`,
-  );
+  console.log(`User "${follow.userName}" is now following "${follow.feedName}".`);
 };
