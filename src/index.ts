@@ -1,15 +1,20 @@
 // src/index.ts
 
-import { registerCommand, runCommand } from "./commands.js";
+import {
+  registerCommand,
+  runCommand,
+  type CommandsRegistry,
+  middlewareLoggedIn,
+} from "./commands.js";
 import { handlerLogin } from "./handlerLogin.js";
 import { handlerRegister } from "./handlerRegister.js";
 import { handlerReset } from "./handlerReset.js";
 import { handlerUsers } from "./handlerUsers.js";
-import { handlerAgg } from "./handlerAgg.js";
 import { handlerAddFeed } from "./handlerAddFeed.js";
 import { handlerFeeds } from "./handlerFeeds.js";
 import { handlerFollow } from "./handlerFollow.js";
 import { handlerFollowing } from "./handlerFollowing.js";
+import { handlerAgg } from "./handlerAgg.js";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -22,17 +27,23 @@ async function main() {
   const cmdName = args[0];
   const cmdArgs = args.slice(1);
 
-  const registry: any = {};
+  const registry: CommandsRegistry = {};
 
   registerCommand(registry, "login", handlerLogin);
   registerCommand(registry, "register", handlerRegister);
   registerCommand(registry, "reset", handlerReset);
   registerCommand(registry, "users", handlerUsers);
-  registerCommand(registry, "agg", handlerAgg);
-  registerCommand(registry, "addfeed", handlerAddFeed);
   registerCommand(registry, "feeds", handlerFeeds);
-  registerCommand(registry, "follow", handlerFollow);
-  registerCommand(registry, "following", handlerFollowing);
+  registerCommand(registry, "agg", handlerAgg);
+
+  // Commands that require a logged-in user:
+  registerCommand(registry, "addfeed", middlewareLoggedIn(handlerAddFeed));
+  registerCommand(registry, "follow", middlewareLoggedIn(handlerFollow));
+  registerCommand(
+    registry,
+    "following",
+    middlewareLoggedIn(handlerFollowing),
+  );
 
   try {
     await runCommand(registry, cmdName, ...cmdArgs);
@@ -41,7 +52,6 @@ async function main() {
     process.exit(1);
   }
 
-  // Important so the Postgres connection doesn't keep Node alive
   process.exit(0);
 }
 
