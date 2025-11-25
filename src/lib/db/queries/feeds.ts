@@ -2,7 +2,7 @@
 
 import { db } from "..";
 import { feeds, users, type Feed, type User } from "../schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export async function createFeed(
   name: string,
@@ -39,6 +39,29 @@ export async function getFeedByUrl(url: string): Promise<Feed | null> {
     .select()
     .from(feeds)
     .where(eq(feeds.url, url));
+
+  return rows[0] ?? null;
+}
+
+export async function markFeedFetched(feedId: string): Promise<void> {
+  const now = new Date();
+
+  await db
+    .update(feeds)
+    .set({
+      lastFetchedAt: now,
+      updatedAt: now,
+    })
+    .where(eq(feeds.id, feedId));
+}
+
+export async function getNextFeedToFetch(): Promise<Feed | null> {
+  const rows = await db
+    .select()
+    .from(feeds)
+    // Oldest first, NULLs (never fetched) first
+    .orderBy(sql`${feeds.lastFetchedAt} NULLS FIRST`)
+    .limit(1);
 
   return rows[0] ?? null;
 }

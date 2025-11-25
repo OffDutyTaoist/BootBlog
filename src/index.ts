@@ -15,6 +15,8 @@ import { handlerFeeds } from "./handlerFeeds.js";
 import { handlerFollow } from "./handlerFollow.js";
 import { handlerFollowing } from "./handlerFollowing.js";
 import { handlerAgg } from "./handlerAgg.js";
+import { handlerUnfollow } from "./handlerUnfollow.js";
+import { handlerBrowse } from "./handlerBrowse.js";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -39,11 +41,9 @@ async function main() {
   // Commands that require a logged-in user:
   registerCommand(registry, "addfeed", middlewareLoggedIn(handlerAddFeed));
   registerCommand(registry, "follow", middlewareLoggedIn(handlerFollow));
-  registerCommand(
-    registry,
-    "following",
-    middlewareLoggedIn(handlerFollowing),
-  );
+  registerCommand(registry, "following", middlewareLoggedIn(handlerFollowing));
+  registerCommand(registry, "unfollow", middlewareLoggedIn(handlerUnfollow));
+  registerCommand(registry, "browse", middlewareLoggedIn(handlerBrowse));
 
   try {
     await runCommand(registry, cmdName, ...cmdArgs);

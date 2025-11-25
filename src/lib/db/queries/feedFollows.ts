@@ -1,8 +1,16 @@
 // src/lib/db/queries/feedFollows.ts
 
 import { db } from "..";
-import { feedFollows, feeds, users, type FeedFollow, type Feed, type User } from "../schema";
-import { eq } from "drizzle-orm";
+import { 
+    feedFollows, 
+    feeds, 
+    users, 
+    type FeedFollow, 
+    type Feed, 
+    type User 
+} from "../schema";
+import { eq, and } from "drizzle-orm";
+import { getFeedByUrl } from "./feeds.js";
 
 export type FeedFollowWithNames = FeedFollow & {
   userName: string;
@@ -58,3 +66,26 @@ export async function getFeedFollowsForUser(
     feedName: row.feed.name,
   }));
 }
+
+export async function deleteFeedFollowByUserAndUrl(
+  userId: string,
+  url: string,
+): Promise<number> {
+  const feed = await getFeedByUrl(url);
+  if (!feed) {
+    return 0;
+  }
+
+  const deleted = await db
+    .delete(feedFollows)
+    .where(
+      and(
+        eq(feedFollows.userId, userId),
+        eq(feedFollows.feedId, feed.id),
+      ),
+    )
+    .returning();
+
+  return deleted.length;
+}
+
